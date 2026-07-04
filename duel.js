@@ -985,36 +985,65 @@ function base64UrlToBytes(value) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+function compactSdp(sdp) {
+  return sdp
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^a=candidate:.*\stcp\s/iu.test(line))
+    .filter((line) => line !== "a=end-of-candidates")
+    .filter((line) => line !== "a=ice-options:trickle")
+    .join("\r\n")
+    + "\r\n";
+}
+
 function compactDescription(value) {
-  return value?.sdp ? { t: value.type, s: value.sdp } : value;
+  return value?.sdp ? [value.type, compactSdp(value.sdp)] : value;
 }
 
 function expandDescription(value) {
+  if (Array.isArray(value) && value.length === 2) {
+    return { type: value[0], sdp: value[1] };
+  }
   return value?.t && value?.s ? { type: value.t, sdp: value.s } : value;
 }
 
-async function gzipText(text) {
+async function compressText(text, format) {
   if (!("CompressionStream" in window)) return null;
-  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  try {
+    const stream = new Blob([text]).stream().pipeThrough(new CompressionStream(format));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
-async function gunzipText(bytes) {
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+async function decompressText(bytes, format) {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
   return new Response(stream).text();
 }
 
 async function encodeSignal(value) {
   const text = JSON.stringify(compactDescription(value));
-  const compressed = await gzipText(text);
-  if (compressed) return `G.${bytesToBase64Url(compressed)}`;
+  const rawDeflated = await compressText(text, "deflate-raw");
+  if (rawDeflated) return `R.${bytesToBase64Url(rawDeflated)}`;
+  const deflated = await compressText(text, "deflate");
+  if (deflated) return `D.${bytesToBase64Url(deflated)}`;
+  const gzipped = await compressText(text, "gzip");
+  if (gzipped) return `G.${bytesToBase64Url(gzipped)}`;
   return `J.${bytesToBase64Url(new TextEncoder().encode(text))}`;
 }
 
 async function decodeSignal(value) {
   const trimmed = value.trim();
+  if (trimmed.startsWith("R.")) {
+    return expandDescription(JSON.parse(await decompressText(base64UrlToBytes(trimmed.slice(2)), "deflate-raw")));
+  }
+  if (trimmed.startsWith("D.")) {
+    return expandDescription(JSON.parse(await decompressText(base64UrlToBytes(trimmed.slice(2)), "deflate")));
+  }
   if (trimmed.startsWith("G.")) {
-    return expandDescription(JSON.parse(await gunzipText(base64UrlToBytes(trimmed.slice(2)))));
+    return expandDescription(JSON.parse(await decompressText(base64UrlToBytes(trimmed.slice(2)), "gzip")));
   }
   if (trimmed.startsWith("J.")) {
     return expandDescription(JSON.parse(new TextDecoder().decode(base64UrlToBytes(trimmed.slice(2)))));
@@ -1071,7 +1100,7 @@ async function answerPlayer(slot) {
   await pc.setLocalDescription(answer);
   await waitForIceGatheringComplete(pc);
   answerField.value = await encodeSignal(pc.localDescription);
-  log(`${slot === "p1" ? "1P" : "2P"} Answer 생성 완료`);
+  log(`${slot === "p1" ? "1P" : "2P"} Answer 생성 완료 (${answerField.value.length.toLocaleString("ko-KR")}자)`);
 }
 
 async function createPlayerOffer() {
@@ -1092,7 +1121,7 @@ async function createPlayerOffer() {
   await pc.setLocalDescription(offer);
   await waitForIceGatheringComplete(pc);
   $("#playerOffer").value = await encodeSignal(pc.localDescription);
-  log("Offer 생성 완료. 방장에게 전달하세요.");
+  log(`Offer 생성 완료 (${ $("#playerOffer").value.length.toLocaleString("ko-KR") }자). 방장에게 전달하세요.`);
 }
 
 async function acceptHostAnswer() {
