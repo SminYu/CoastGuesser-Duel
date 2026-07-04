@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoastGuesser Referee Duel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="CoastGuesser Referee Duel 홈">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>COAST<span>DUEL</span></span>
+      </a>
+      <div class="game-stats" aria-label="대전 현황">
+        <div>
+          <span class="stat-label">ROUND</span>
+          <strong><span id="roundNow">0</span><small id="roundTotal">/10</small></strong>
+        </div>
+        <div class="stat-divider"></div>
+        <div>
+          <span class="stat-label">TIME</span>
+          <strong id="roundTimer">00초</strong>
+        </div>
+        <div class="stat-divider"></div>
+        <div>
+          <span class="stat-label">STATUS</span>
+          <strong id="connectionState">대기</strong>
+        </div>
+      </div>
+      <button class="ghost-button" id="resetApp" type="button">새로 시작</button>
+    </header>
+
+    <main class="shell">
+      <section class="setup-panel" id="setupPanel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">WEBRTC REFEREE MODE</p>
+            <h1>방장은 관전하고 1P와 2P가 대전합니다</h1>
+          </div>
+          <div class="data-state" id="dataState">해안선 데이터 로딩 중</div>
+        </div>
+
+        <div class="role-grid">
+          <article class="role-card">
+            <p class="eyebrow">HOST</p>
+            <h2>방장 / 심판</h2>
+            <p>1P와 2P의 Offer를 받아 Answer를 돌려주고, 라운드와 점수를 관리합니다.</p>
+            <label class="field">
+              <span>방장 이름</span>
+              <input id="hostName" maxlength="18" value="Referee" />
+            </label>
+            <label class="field compact">
+              <span>난이도</span>
+              <select id="difficultySelect">
+                <option value="easy">쉬움</option>
+                <option value="normal" selected>보통</option>
+                <option value="hard">어려움</option>
+              </select>
+            </label>
+            <button class="primary-button" id="becomeHost" type="button" disabled>방장으로 열기</button>
+          </article>
+
+          <article class="role-card">
+            <p class="eyebrow">PLAYER</p>
+            <h2>1P / 2P 참가</h2>
+            <p>참가자는 Offer 코드를 만들고 방장에게 전달한 뒤, 방장의 Answer를 붙여넣습니다.</p>
+            <label class="field">
+              <span>닉네임</span>
+              <input id="playerName" maxlength="18" value="Player" />
+            </label>
+            <label class="field compact">
+              <span>자리</span>
+              <select id="playerSlot">
+                <option value="p1">1P</option>
+                <option value="p2">2P</option>
+              </select>
+            </label>
+            <button class="primary-button" id="becomePlayer" type="button" disabled>참가자로 연결 준비</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="connect-panel hidden" id="hostConnectPanel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">HOST CONNECTION DESK</p>
+            <h2>플레이어 Offer를 받고 Answer를 전달하세요</h2>
+          </div>
+          <button class="primary-button small" id="startMatch" type="button" disabled>10라운드 시작</button>
+        </div>
+        <div class="connect-grid">
+          <article class="connect-card" data-slot-card="p1">
+            <h3>1P 연결</h3>
+            <p id="p1Status">대기 중</p>
+            <textarea id="p1Offer" placeholder="1P가 만든 Offer 코드를 붙여넣기"></textarea>
+            <button class="ghost-button" id="answerP1" type="button">1P Answer 만들기</button>
+            <textarea id="p1Answer" readonly placeholder="이 Answer 코드를 1P에게 전달"></textarea>
+          </article>
+          <article class="connect-card" data-slot-card="p2">
+            <h3>2P 연결</h3>
+            <p id="p2Status">대기 중</p>
+            <textarea id="p2Offer" placeholder="2P가 만든 Offer 코드를 붙여넣기"></textarea>
+            <button class="ghost-button" id="answerP2" type="button">2P Answer 만들기</button>
+            <textarea id="p2Answer" readonly placeholder="이 Answer 코드를 2P에게 전달"></textarea>
+          </article>
+        </div>
+      </section>
+
+      <section class="connect-panel hidden" id="playerConnectPanel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">PLAYER LINK</p>
+            <h2>Offer를 방장에게 보내고 Answer를 붙여넣으세요</h2>
+          </div>
+          <button class="primary-button small" id="readyButton" type="button" disabled>Ready</button>
+        </div>
+        <div class="connect-grid two">
+          <article class="connect-card">
+            <h3>내 Offer</h3>
+            <p>아래 코드를 방장에게 전달하세요.</p>
+            <textarea id="playerOffer" readonly></textarea>
+          </article>
+          <article class="connect-card">
+            <h3>방장 Answer</h3>
+            <p>방장이 만든 Answer 코드를 붙여넣으면 연결됩니다.</p>
+            <textarea id="playerAnswer" placeholder="방장 Answer 코드 붙여넣기"></textarea>
+            <button class="ghost-button" id="acceptHostAnswer" type="button">Answer 적용</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="scoreboard" aria-label="대전 점수판">
+        <article class="score-card" id="scoreP1">
+          <span>1P</span>
+          <strong id="p1Name">대기 중</strong>
+          <b id="p1Score">0</b>
+          <small id="p1Submit">미제출</small>
+        </article>
+        <article class="score-card referee">
+          <span>REFEREE</span>
+          <strong id="roleLabel">역할 선택 전</strong>
+          <b id="phaseLabel">LOBBY</b>
+          <small>10라운드 · 라운드당 30초</small>
+        </article>
+        <article class="score-card" id="scoreP2">
+          <span>2P</span>
+          <strong id="p2Name">대기 중</strong>
+          <b id="p2Score">0</b>
+          <small id="p2Submit">미제출</small>
+        </article>
+      </section>
+
+      <section class="host-controls hidden" id="hostControls">
+        <div>
+          <p class="eyebrow">HOST CONTROL</p>
+          <strong id="hostControlText">플레이어 연결 후 대전을 시작할 수 있습니다</strong>
+        </div>
+        <button class="primary-button small" id="restartMatch" type="button" disabled>10라운드 시작</button>
+      </section>
+
+      <section class="round-result hidden" id="roundResult" aria-label="최근 라운드 결과">
+        <div>
+          <span class="legend-dot p1"></span>
+          <strong>1P</strong>
+          <b id="p1RoundGain">+0</b>
+          <small id="p1RoundDistance">-</small>
+        </div>
+        <div>
+          <span class="legend-dot answer"></span>
+          <strong>ANSWER</strong>
+          <b id="answerCoordinate">라운드 결과 대기</b>
+        </div>
+        <div>
+          <span class="legend-dot p2"></span>
+          <strong>2P</strong>
+          <b id="p2RoundGain">+0</b>
+          <small id="p2RoundDistance">-</small>
+        </div>
+      </section>
+
+      <section class="game-grid">
+        <section class="coast-panel" aria-labelledby="coastHeading">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">COASTAL FRAGMENT <span id="fragmentNumber">#00</span></p>
+              <h2 id="coastHeading">대전 준비 중</h2>
+            </div>
+            <div class="scan-status">NATURAL EARTH · 1:50M</div>
+          </div>
+          <div class="coast-frame">
+            <canvas id="coastCanvas" width="1920" height="1240"></canvas>
+            <div class="loading-state" id="coastOverlay">라운드 시작 대기 중</div>
+            <div class="scale-bar"><span></span><b id="scaleLabel">100 KM</b></div>
+          </div>
+        </section>
+
+        <section class="map-panel" aria-labelledby="mapHeading">
+          <div class="panel-heading map-heading">
+            <div>
+              <p class="eyebrow">TACTICAL MAP</p>
+              <h2 id="mapHeading">플레이어만 추측할 수 있습니다</h2>
+            </div>
+            <button class="ghost-button small" id="resetGuess" type="button" disabled>핀 초기화</button>
+          </div>
+          <div class="map-wrap disabled" id="mapWrap">
+            <canvas id="worldBase" width="2000" height="1000" aria-hidden="true"></canvas>
+            <svg id="worldMap" viewBox="0 0 1000 500" role="img" aria-label="위치를 선택할 수 있는 세계지도">
+              <defs>
+                <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                  <path d="M 50 0 L 0 0 0 50" fill="none" stroke="currentColor" stroke-width="1" />
+                </pattern>
+              </defs>
+              <rect class="map-grid" width="1000" height="500"></rect>
+              <g id="resultLayer"></g>
+              <g id="guessPin" class="guess-pin" visibility="hidden">
+                <circle class="pin-pulse" r="18"></circle>
+                <circle class="pin-ring" r="9"></circle>
+                <circle class="pin-core" r="3"></circle>
+              </g>
+            </svg>
+          </div>
+          <div class="selection-readout">
+            <span>SELECTED COORDINATES</span>
+            <strong id="selectedCoordinates">아직 선택하지 않았습니다</strong>
+          </div>
+          <button class="primary-button" id="submitGuess" type="button" disabled>
+            <span id="submitLabel">라운드 대기 중</span><span>→</span>
+          </button>
+        </section>
+      </section>
+
+      <section class="event-log">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">MATCH LOG</p>
+            <h2>대전 진행</h2>
+          </div>
+        </div>
+        <ol id="logList"></ol>
+      </section>
+    </main>
+
+    <script src="duel.js"></script>
+  </body>
+</html>
