@@ -1,0 +1,645 @@
+:root {
+  --ink: #0d2724;
+  --muted: #6e817d;
+  --paper: #f2f0e9;
+  --card: rgba(251, 250, 245, 0.9);
+  --line: rgba(13, 39, 36, 0.16);
+  --orange: #f45f38;
+  --teal: #38c7ba;
+  --deep-teal: #13665f;
+  --shadow: 0 24px 70px rgba(31, 51, 48, 0.11);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Segoe UI", "Pretendard", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 8% 14%, rgba(56, 199, 186, 0.08), transparent 28%),
+    radial-gradient(circle at 94% 88%, rgba(244, 95, 56, 0.06), transparent 25%),
+    var(--paper);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.topbar {
+  min-height: 84px;
+  padding: 14px clamp(18px, 4vw, 64px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(242, 240, 233, 0.8);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.brand > span:last-child > span {
+  color: var(--orange);
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.brand-mark span {
+  width: 4px;
+  height: 18px;
+  border-radius: 99px;
+  background: var(--ink);
+  transform: rotate(28deg);
+}
+
+.brand-mark span:nth-child(2) {
+  height: 25px;
+  background: var(--orange);
+}
+
+.game-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.game-stats > div:not(.stat-divider) {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-label,
+.eyebrow,
+.selection-readout span,
+.score-card span,
+.score-card small,
+.data-state,
+.scan-status {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+
+.game-stats strong {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 18px;
+}
+
+.game-stats small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+
+.shell {
+  max-width: 1120px;
+  margin: auto;
+  padding: clamp(22px, 2.4vw, 36px) clamp(16px, 3vw, 42px) 70px;
+  display: grid;
+  gap: 26px;
+}
+
+.setup-panel,
+.connect-panel,
+.host-controls,
+.event-log {
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--orange);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2 {
+  margin-bottom: 0;
+  line-height: 1.12;
+  letter-spacing: -0.8px;
+}
+
+h1 {
+  font-size: clamp(26px, 3vw, 40px);
+}
+
+h2 {
+  font-size: clamp(22px, 2vw, 30px);
+}
+
+.role-grid,
+.connect-grid,
+.scoreboard,
+.round-result,
+.game-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.role-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.connect-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.connect-grid.two {
+  align-items: start;
+}
+
+.role-card,
+.connect-card,
+.score-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.role-card p,
+.connect-card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.field.compact {
+  max-width: 240px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--ink);
+}
+
+input,
+select {
+  height: 44px;
+  padding: 0 12px;
+}
+
+textarea {
+  min-height: 110px;
+  margin-top: 8px;
+  padding: 12px;
+  resize: vertical;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.primary-button,
+.ghost-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+  transition: 180ms ease;
+}
+
+.primary-button {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  background: var(--ink);
+}
+
+.primary-button.small,
+.ghost-button.small {
+  width: auto;
+  min-height: 38px;
+  margin-top: 0;
+}
+
+.ghost-button {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.primary-button:not(:disabled):hover,
+.ghost-button:not(:disabled):hover {
+  color: white;
+  border-color: var(--orange);
+  background: var(--orange);
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.topbar > .ghost-button {
+  justify-self: end;
+}
+
+.scoreboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.score-card {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.score-card strong {
+  font-size: 18px;
+}
+
+.score-card b {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 36px;
+  color: var(--deep-teal);
+}
+
+.score-card.submitted {
+  border-color: rgba(56, 199, 186, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(56, 199, 186, 0.7);
+}
+
+.score-card.referee b {
+  color: var(--orange);
+  font-size: 20px;
+}
+
+.host-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.host-controls strong {
+  display: block;
+  font-size: 15px;
+}
+
+.round-result {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.round-result > div {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.round-result strong {
+  font-size: 11px;
+}
+
+.round-result b {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.round-result small {
+  grid-column: 2 / -1;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(13, 39, 36, 0.07);
+}
+
+.legend-dot.p1 {
+  background: #f45f38;
+}
+
+.legend-dot.p2 {
+  background: #1366d6;
+}
+
+.legend-dot.answer {
+  background: var(--teal);
+}
+
+.game-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.coast-frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 2.35;
+  border: 1px solid rgba(13, 39, 36, 0.24);
+  background: #bad9d4;
+  box-shadow: var(--shadow);
+}
+
+#coastCanvas,
+#worldBase {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.loading-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(50, 111, 120, 0.88);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 1.2px;
+}
+
+.loading-state.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scale-bar {
+  position: absolute;
+  left: 30px;
+  bottom: 29px;
+  color: white;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.32);
+}
+
+.scale-bar span {
+  display: block;
+  width: 76px;
+  height: 4px;
+  margin-bottom: 7px;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+  border-bottom: 1px solid white;
+}
+
+.scale-bar b {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.map-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 320px);
+  column-gap: 24px;
+  align-items: end;
+}
+
+.map-heading,
+.map-wrap {
+  grid-column: 1 / -1;
+}
+
+.map-wrap {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(13, 39, 36, 0.2);
+  background: #dfe7e1;
+  box-shadow: var(--shadow);
+  cursor: crosshair;
+}
+
+.map-wrap.disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+#worldMap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: rgba(13, 39, 36, 0.08);
+}
+
+.map-grid {
+  fill: url(#grid);
+}
+
+.guess-pin {
+  pointer-events: none;
+}
+
+.pin-pulse {
+  fill: rgba(244, 95, 56, 0.16);
+  stroke: rgba(244, 95, 56, 0.4);
+}
+
+.pin-ring {
+  fill: var(--orange);
+  stroke: white;
+  stroke-width: 3;
+}
+
+.pin-core {
+  fill: white;
+}
+
+.answer-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 8 7;
+}
+
+.answer-line.p1 {
+  stroke: #f45f38;
+}
+
+.answer-line.p2 {
+  stroke: #1366d6;
+}
+
+.answer-dot {
+  fill: var(--teal);
+  stroke: white;
+  stroke-width: 3;
+}
+
+.player-dot {
+  stroke: white;
+  stroke-width: 2;
+}
+
+.player-dot.p1 {
+  fill: #f45f38;
+}
+
+.player-dot.p2 {
+  fill: #1366d6;
+}
+
+.player-label {
+  fill: var(--ink);
+  stroke: white;
+  stroke-width: 3;
+  paint-order: stroke;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.selection-readout {
+  min-height: 54px;
+  padding: 9px 3px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.selection-readout strong {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: right;
+}
+
+#submitGuess {
+  grid-column: 2;
+}
+
+.event-log ol {
+  max-height: 220px;
+  margin: 0;
+  padding-left: 22px;
+  overflow-y: auto;
+}
+
+.event-log li {
+  padding: 8px 0;
+  color: #526864;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 800px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar > .ghost-button,
+  .game-stats {
+    justify-self: stretch;
+  }
+
+  .game-stats {
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .role-grid,
+  .connect-grid,
+  .scoreboard,
+  .round-result {
+    grid-template-columns: 1fr;
+  }
+
+  .map-panel {
+    display: block;
+  }
+
+  .coast-frame {
+    aspect-ratio: 1.3;
+  }
+
+  .panel-heading {
+    display: grid;
+  }
+}
