@@ -209,6 +209,35 @@ h2 {
   align-items: start;
 }
 
+.room-card {
+  grid-column: 1 / -1;
+}
+
+.room-code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 12px;
+}
+
+.room-code-row strong {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.66);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+}
+
+.connect-card .hint {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
 .role-card,
 .connect-card,
 .score-card {
