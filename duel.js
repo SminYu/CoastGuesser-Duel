@@ -72,6 +72,15 @@ const state = {
   player: {
     pc: null,
     channel: null
+  },
+  signaling: {
+    enabled: false,
+    app: null,
+    db: null,
+    roomCode: "",
+    roomRef: null,
+    unsubscribers: [],
+    answerApplied: false
   }
 };
 
@@ -1080,6 +1089,245 @@ function setupChannel(channel, onMessage, onOpen) {
   channel.onclose = () => log("WebRTC 채널이 닫혔습니다.");
 }
 
+function getFirebaseConfig() {
+  const config = window.COAST_DUEL_FIREBASE_CONFIG;
+  if (!config || !config.apiKey || !config.projectId) return null;
+  const joined = Object.values(config).join(" ");
+  if (joined.includes("PASTE_") || joined.includes("YOUR_PROJECT")) return null;
+  return config;
+}
+
+function setFirebaseStatus(target, message) {
+  const el = $(target);
+  if (el) el.textContent = message;
+}
+
+function setManualSignalVisible(visible) {
+  ["p1Offer", "answerP1", "p1Answer", "p2Offer", "answerP2", "p2Answer"].forEach((id) => {
+    const el = $(`#${id}`);
+    if (el) el.classList.toggle("hidden", !visible);
+  });
+  const playerManualGrid = $("#playerOffer")?.closest(".connect-grid");
+  if (playerManualGrid) playerManualGrid.classList.toggle("hidden", !visible);
+}
+
+function setupFirebaseSignaling() {
+  if (state.signaling.enabled) return true;
+  const config = getFirebaseConfig();
+  if (!config || typeof firebase === "undefined") {
+    setManualSignalVisible(true);
+    return false;
+  }
+
+  state.signaling.app = firebase.apps.length ? firebase.app() : firebase.initializeApp(config);
+  state.signaling.db = firebase.firestore();
+  state.signaling.enabled = true;
+  setManualSignalVisible(false);
+  return true;
+}
+
+function candidateToJson(candidate) {
+  if (!candidate) return null;
+  return candidate.toJSON ? candidate.toJSON() : {
+    candidate: candidate.candidate,
+    sdpMid: candidate.sdpMid,
+    sdpMLineIndex: candidate.sdpMLineIndex,
+    usernameFragment: candidate.usernameFragment
+  };
+}
+
+function descriptionToJson(description) {
+  return {
+    type: description.type,
+    sdp: description.sdp
+  };
+}
+
+function normalizeRoomCode(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 10);
+}
+
+function generateRoomCode() {
+  const values = new Uint32Array(2);
+  crypto.getRandomValues(values);
+  const n = (BigInt(values[0]) << 32n) + BigInt(values[1]);
+  return String(n % 10000000000n).padStart(10, "0");
+}
+
+function addUnsubscriber(unsubscribe) {
+  state.signaling.unsubscribers.push(unsubscribe);
+  return unsubscribe;
+}
+
+function subscribeRemoteCandidates(collectionRef, pc) {
+  const seen = new Set();
+  return addUnsubscriber(collectionRef.onSnapshot((snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type !== "added" || seen.has(change.doc.id)) return;
+      seen.add(change.doc.id);
+      const candidate = change.doc.data();
+      if (!candidate?.candidate) return;
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((error) => {
+        log(`ICE 후보 적용 실패: ${error.message}`);
+      });
+    });
+  }));
+}
+
+async function createFirebaseRoom() {
+  if (!setupFirebaseSignaling()) {
+    setFirebaseStatus("#firebaseHostStatus", "Firebase 설정이 없어 수동 연결 모드입니다.");
+    log("Firebase 설정이 없어 수동 Offer/Answer 모드로 진행합니다.");
+    return;
+  }
+
+  const db = state.signaling.db;
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const roomCode = generateRoomCode();
+    const roomRef = db.collection("rooms").doc(roomCode);
+    const existing = await roomRef.get();
+    if (existing.exists) continue;
+
+    await roomRef.set({
+      hostName: state.nickname,
+      difficultyKey: state.difficultyKey,
+      status: "lobby",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: firebase.firestore.Timestamp.fromMillis(Date.now() + 1000 * 60 * 60)
+    });
+    state.signaling.roomCode = roomCode;
+    state.signaling.roomRef = roomRef;
+    $("#roomCodeDisplay").textContent = roomCode;
+    setFirebaseStatus("#firebaseHostStatus", "이 코드를 1P와 2P에게 전달하세요.");
+    log(`Firebase 방 생성 완료: ${roomCode}`);
+    listenForFirebasePeer("p1");
+    listenForFirebasePeer("p2");
+    return;
+  }
+  throw new Error("빈 방 코드를 만들지 못했습니다. 다시 시도해 주세요.");
+}
+
+function listenForFirebasePeer(slot) {
+  const peerRef = state.signaling.roomRef.collection("peers").doc(slot);
+  addUnsubscriber(peerRef.onSnapshot((snapshot) => {
+    if (!snapshot.exists || state.host.peers[slot].pc) return;
+    const data = snapshot.data();
+    if (!data?.offer) return;
+    connectFirebaseHostPeer(slot, peerRef, data).catch((error) => {
+      state.host.peers[slot].pc = null;
+      log(`${slot === "p1" ? "1P" : "2P"} Firebase 연결 실패: ${error.message}`);
+    });
+  }));
+}
+
+async function connectFirebaseHostPeer(slot, peerRef, data) {
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  state.host.peers[slot].pc = pc;
+  const label = slot === "p1" ? "1P" : "2P";
+
+  pc.onicecandidate = (event) => {
+    const candidate = candidateToJson(event.candidate);
+    if (candidate) peerRef.collection("hostCandidates").add(candidate);
+  };
+  pc.ondatachannel = (event) => {
+    const channel = event.channel;
+    state.host.peers[slot].channel = channel;
+    setupChannel(channel, (message) => handleHostMessage(slot, message), () => {
+      sendToPlayer(slot, { type: "peer-accepted", slot, players: state.players });
+    });
+  };
+
+  subscribeRemoteCandidates(peerRef.collection("playerCandidates"), pc);
+  await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await peerRef.set({
+    answer: descriptionToJson(pc.localDescription),
+    answerCreatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    hostConnected: true
+  }, { merge: true });
+  setFirebaseStatus(`#${slot}Status`, `${label} 연결 승인 완료`);
+  log(`${label} Firebase Answer 저장 완료`);
+}
+
+async function connectPlayerWithRoomCode() {
+  if (!setupFirebaseSignaling()) {
+    log("Firebase 설정이 없어 수동 Offer/Answer 모드로 진행합니다.");
+    setManualSignalVisible(true);
+    await createPlayerOffer();
+    return;
+  }
+
+  const roomCode = normalizeRoomCode($("#joinRoomCode").value);
+  $("#joinRoomCode").value = roomCode;
+  if (roomCode.length !== 10) {
+    setFirebaseStatus("#firebasePlayerStatus", "10자리 숫자 방 코드를 입력하세요.");
+    return;
+  }
+
+  const roomRef = state.signaling.db.collection("rooms").doc(roomCode);
+  const roomSnapshot = await roomRef.get();
+  if (!roomSnapshot.exists) {
+    setFirebaseStatus("#firebasePlayerStatus", "방을 찾지 못했습니다.");
+    return;
+  }
+
+  const peerRef = roomRef.collection("peers").doc(state.slot);
+  const peerSnapshot = await peerRef.get();
+  if (peerSnapshot.exists && peerSnapshot.data()?.offer) {
+    setFirebaseStatus("#firebasePlayerStatus", `${state.slot.toUpperCase()} 자리가 이미 사용 중입니다.`);
+    return;
+  }
+
+  const pc = new RTCPeerConnection(RTC_CONFIG);
+  const channel = pc.createDataChannel("coast-duel");
+  state.player.pc = pc;
+  state.player.channel = channel;
+  state.signaling.roomCode = roomCode;
+  state.signaling.roomRef = roomRef;
+  state.signaling.answerApplied = false;
+
+  setupChannel(channel, handlePlayerMessage, () => {
+    sendToHost({
+      type: "hello",
+      slot: state.slot,
+      nickname: state.nickname
+    });
+  });
+
+  pc.onicecandidate = (event) => {
+    const candidate = candidateToJson(event.candidate);
+    if (candidate) peerRef.collection("playerCandidates").add(candidate);
+  };
+  subscribeRemoteCandidates(peerRef.collection("hostCandidates"), pc);
+
+  addUnsubscriber(peerRef.onSnapshot((snapshot) => {
+    const answer = snapshot.data()?.answer;
+    if (!answer || state.signaling.answerApplied) return;
+    state.signaling.answerApplied = true;
+    pc.setRemoteDescription(new RTCSessionDescription(answer)).then(() => {
+      setFirebaseStatus("#firebasePlayerStatus", "방장과 연결 중입니다. Ready가 켜질 때까지 잠시 기다리세요.");
+      log("Firebase Answer 적용 완료");
+    }).catch((error) => {
+      state.signaling.answerApplied = false;
+      log(`Firebase Answer 적용 실패: ${error.message}`);
+    });
+  }));
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await peerRef.set({
+    nickname: state.nickname,
+    slot: state.slot,
+    offer: descriptionToJson(pc.localDescription),
+    joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+  setFirebaseStatus("#firebasePlayerStatus", "Offer 저장 완료. 방장의 연결 승인을 기다리는 중입니다.");
+  log(`${roomCode} 방에 ${state.slot.toUpperCase()}로 참가 요청을 보냈습니다.`);
+}
+
 async function answerPlayer(slot) {
   const offerField = slot === "p1" ? $("#p1Offer") : $("#p2Offer");
   const answerField = slot === "p1" ? $("#p1Answer") : $("#p2Answer");
@@ -1141,6 +1389,11 @@ function becomeHost() {
   $("#roleLabel").textContent = "방장 / 심판";
   $("#coastHeading").textContent = "플레이어 연결 대기 중";
   log("방장 모드가 열렸습니다. 1P와 2P의 Offer를 받아주세요.");
+  createFirebaseRoom().catch((error) => {
+    setManualSignalVisible(true);
+    setFirebaseStatus("#firebaseHostStatus", `Firebase 방 생성 실패: ${error.message}`);
+    log(`Firebase 방 생성 실패: ${error.message}`);
+  });
   updateScoreboard();
 }
 
@@ -1152,6 +1405,10 @@ async function becomePlayer() {
   $("#playerConnectPanel").classList.remove("hidden");
   $("#roleLabel").textContent = state.slot === "p1" ? "1P 참가자" : "2P 참가자";
   $("#coastHeading").textContent = "방장 연결 대기 중";
+  if (setupFirebaseSignaling()) {
+    setFirebaseStatus("#firebasePlayerStatus", "방장이 알려준 10자리 숫자를 입력하세요.");
+    return;
+  }
   await createPlayerOffer();
 }
 
@@ -1200,6 +1457,19 @@ $("#becomePlayer").addEventListener("click", becomePlayer);
 $("#answerP1").addEventListener("click", () => answerPlayer("p1").catch((error) => log(`1P Answer 실패: ${error.message}`)));
 $("#answerP2").addEventListener("click", () => answerPlayer("p2").catch((error) => log(`2P Answer 실패: ${error.message}`)));
 $("#acceptHostAnswer").addEventListener("click", () => acceptHostAnswer().catch((error) => log(`Answer 적용 실패: ${error.message}`)));
+$("#copyRoomCode").addEventListener("click", () => {
+  const code = state.signaling.roomCode || $("#roomCodeDisplay").textContent.trim();
+  if (!code || code.includes("-")) return;
+  navigator.clipboard?.writeText(code);
+  log(`방 코드 ${code}를 복사했습니다.`);
+});
+$("#joinRoomCode").addEventListener("input", (event) => {
+  event.target.value = normalizeRoomCode(event.target.value);
+});
+$("#connectWithRoomCode").addEventListener("click", () => connectPlayerWithRoomCode().catch((error) => {
+  setFirebaseStatus("#firebasePlayerStatus", `연결 실패: ${error.message}`);
+  log(`Firebase 연결 실패: ${error.message}`);
+}));
 $("#readyButton").addEventListener("click", toggleReady);
 $("#startMatch").addEventListener("click", startMatch);
 $("#restartMatch").addEventListener("click", startMatch);
