@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CoastGuesser Referee Duel</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20260707-1" />
   </head>
   <body>
     <header class="topbar">
@@ -12,22 +12,6 @@
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
         <span>COAST<span>DUEL</span></span>
       </a>
-      <div class="game-stats" aria-label="대전 현황">
-        <div>
-          <span class="stat-label">ROUND</span>
-          <strong><span id="roundNow">0</span><small id="roundTotal">/10</small></strong>
-        </div>
-        <div class="stat-divider"></div>
-        <div>
-          <span class="stat-label">TIME</span>
-          <strong id="roundTimer">00초</strong>
-        </div>
-        <div class="stat-divider"></div>
-        <div>
-          <span class="stat-label">STATUS</span>
-          <strong id="connectionState">대기</strong>
-        </div>
-      </div>
       <button class="ghost-button" id="resetApp" type="button">새로 시작</button>
     </header>
 
@@ -159,7 +143,20 @@
           <span>REFEREE</span>
           <strong id="roleLabel">역할 선택 전</strong>
           <b id="phaseLabel">LOBBY</b>
-          <small>10라운드 · 라운드당 30초</small>
+          <div class="referee-stats" aria-label="대전 현황">
+            <div>
+              <span class="stat-label">ROUND</span>
+              <strong><span id="roundNow">0</span><small id="roundTotal">/10</small></strong>
+            </div>
+            <div>
+              <span class="stat-label">TIME</span>
+              <strong id="roundTimer">00초</strong>
+            </div>
+            <div>
+              <span class="stat-label">STATUS</span>
+              <strong id="connectionState">대기</strong>
+            </div>
+          </div>
         </article>
         <article class="score-card" id="scoreP2">
           <span>2P</span>
