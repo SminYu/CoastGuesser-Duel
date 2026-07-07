@@ -352,33 +352,35 @@ button:disabled {
 
 .score-card.referee b {
   color: var(--orange);
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .referee-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 10px;
   margin-top: 2px;
-  padding-top: 7px;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
 }
 
 .referee-stats > div {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 .referee-stats strong {
   font-family: Consolas, "Courier New", monospace;
-  font-size: 14px;
+  font-size: 22px;
+  font-weight: 900;
   line-height: 1.1;
 }
 
 .referee-stats small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .host-controls {
