@@ -219,6 +219,12 @@ h2 {
   background: rgba(255, 255, 255, 0.42);
 }
 
+.score-card {
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+}
+
 .role-card p,
 .connect-card p {
   color: var(--muted);
@@ -317,6 +323,9 @@ button:disabled {
 }
 
 .scoreboard {
+  position: sticky;
+  top: 10px;
+  z-index: 5;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -332,7 +341,7 @@ button:disabled {
 
 .score-card b {
   font-family: Consolas, "Courier New", monospace;
-  font-size: 30px;
+  font-size: 28px;
   color: var(--deep-teal);
 }
 
@@ -343,15 +352,15 @@ button:disabled {
 
 .score-card.referee b {
   color: var(--orange);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .referee-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   margin-top: 2px;
-  padding-top: 8px;
+  padding-top: 7px;
   border-top: 1px solid var(--line);
 }
 
@@ -363,7 +372,7 @@ button:disabled {
 
 .referee-stats strong {
   font-family: Consolas, "Courier New", monospace;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.1;
 }
 
@@ -651,6 +660,10 @@ button:disabled {
   .scoreboard,
   .round-result {
     grid-template-columns: 1fr;
+  }
+
+  .scoreboard {
+    position: static;
   }
 
   .map-panel {
