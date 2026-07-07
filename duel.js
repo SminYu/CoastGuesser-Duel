@@ -2,6 +2,7 @@ const COAST_DATA_URL = "https://raw.githubusercontent.com/SminYu/CoastGuesser/ma
 const LAND_DATA_URL = "https://raw.githubusercontent.com/SminYu/CoastGuesser/main/data/ne_50m_land/ne_50m_land.shp";
 const ROUND_COUNT = 10;
 const ROUND_TIME_MS = 30 * 1000;
+const FIRST_SUBMIT_TIME_LIMIT_MS = 10 * 1000;
 const MAX_ROUND_SCORE = 100;
 const EARTH_RADIUS_KM = 6371;
 const SAMPLING_WEIGHT_EXPONENT = 0.3;
@@ -558,6 +559,22 @@ function stopTimer() {
   updateTimerDisplay();
 }
 
+function shortenTimerAfterFirstSubmit(slot) {
+  if (state.role !== "host" || state.phase !== "playing" || !state.endsAt) return;
+  const remaining = state.endsAt - Date.now();
+  if (remaining <= FIRST_SUBMIT_TIME_LIMIT_MS) return;
+
+  state.endsAt = Date.now() + FIRST_SUBMIT_TIME_LIMIT_MS;
+  updateTimerDisplay();
+  broadcast({
+    type: "round-time-adjust",
+    roundIndex: state.roundIndex,
+    endsAt: state.endsAt,
+    triggeredBy: slot
+  });
+  log(`${slot === "p1" ? "1P" : "2P"} 선제출: 남은 시간을 10초로 줄였습니다.`);
+}
+
 function createSvgElement(name, attributes) {
   const element = document.createElementNS("http://www.w3.org/2000/svg", name);
   Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
@@ -819,6 +836,7 @@ function receiveHostGuess(slot, guess) {
   state.host.guesses[slot] = guess;
   state.players[slot].submitted = true;
   broadcast({ type: "player-submit", slot, roundIndex: state.roundIndex, players: state.players });
+  if (!(state.host.guesses.p1 && state.host.guesses.p2)) shortenTimerAfterFirstSubmit(slot);
   updateScoreboard();
   log(`${slot === "p1" ? "1P" : "2P"} 제출 수신`);
   if (state.host.guesses.p1 && state.host.guesses.p2) finishRound();
@@ -946,6 +964,11 @@ function handlePlayerMessage(message) {
   if (message.type === "player-submit") {
     state.players = message.players;
     updateScoreboard();
+  }
+  if (message.type === "round-time-adjust" && message.roundIndex === state.roundIndex) {
+    state.endsAt = message.endsAt;
+    updateTimerDisplay();
+    log(`${message.triggeredBy === "p1" ? "1P" : "2P"} 선제출로 남은 시간이 10초로 줄었습니다.`);
   }
   if (message.type === "round-result") {
     state.phase = "revealing";
