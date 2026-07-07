@@ -700,6 +700,16 @@ function submitGuess() {
   log(`${state.slot === "p1" ? "1P" : "2P"} 추측 제출 완료`);
 }
 
+function handleGlobalKeydown(event) {
+  if (event.key !== "Enter" || event.repeat || event.isComposing) return;
+  const target = event.target;
+  const tagName = target?.tagName?.toLowerCase();
+  if (tagName === "input" || tagName === "textarea" || tagName === "select" || target?.isContentEditable) return;
+  if (state.role !== "player" || state.phase !== "playing" || state.submitted || !state.guess) return;
+  event.preventDefault();
+  submitGuess();
+}
+
 function updateScoreboard() {
   const canStart = canStartMatch();
   const startText = state.phase === "finished" ? "새 10라운드 시작" : "10라운드 시작";
@@ -1499,6 +1509,7 @@ $("#restartMatch").addEventListener("click", startMatch);
 $("#worldMap").addEventListener("click", placeGuess);
 $("#resetGuess").addEventListener("click", resetGuess);
 $("#submitGuess").addEventListener("click", submitGuess);
+document.addEventListener("keydown", handleGlobalKeydown);
 $("#resetApp").addEventListener("click", () => window.location.reload());
 
 initializeData();
