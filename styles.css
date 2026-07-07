@@ -42,12 +42,12 @@ button {
 }
 
 .topbar {
-  min-height: 84px;
-  padding: 14px clamp(18px, 4vw, 64px);
+  min-height: 62px;
+  padding: 10px clamp(16px, 3vw, 48px);
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   border-bottom: 1px solid var(--line);
   background: rgba(242, 240, 233, 0.8);
   backdrop-filter: blur(18px);
@@ -93,18 +93,6 @@ button {
   background: var(--orange);
 }
 
-.game-stats {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.game-stats > div:not(.stat-divider) {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
 .stat-label,
 .eyebrow,
 .selection-readout span,
@@ -119,35 +107,19 @@ button {
   color: var(--muted);
 }
 
-.game-stats strong {
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 18px;
-}
-
-.game-stats small {
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.stat-divider {
-  width: 1px;
-  height: 28px;
-  background: var(--line);
-}
-
 .shell {
-  max-width: 1120px;
+  max-width: 1240px;
   margin: auto;
-  padding: clamp(22px, 2.4vw, 36px) clamp(16px, 3vw, 42px) 70px;
+  padding: clamp(12px, 1.6vw, 24px) clamp(14px, 2.4vw, 34px) 48px;
   display: grid;
-  gap: 26px;
+  gap: 14px;
 }
 
 .setup-panel,
 .connect-panel,
 .host-controls,
 .event-log {
-  padding: 24px;
+  padding: 18px;
   border: 1px solid var(--line);
   background: var(--card);
   box-shadow: var(--shadow);
@@ -157,8 +129,8 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
 .eyebrow {
@@ -194,7 +166,7 @@ h2 {
 .round-result,
 .game-grid {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .role-grid {
@@ -242,7 +214,7 @@ h2 {
 .connect-card,
 .score-card {
   min-width: 0;
-  padding: 20px;
+  padding: 14px 16px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.42);
 }
@@ -350,17 +322,17 @@ button:disabled {
 
 .score-card {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   text-align: center;
 }
 
 .score-card strong {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .score-card b {
   font-family: Consolas, "Courier New", monospace;
-  font-size: 36px;
+  font-size: 30px;
   color: var(--deep-teal);
 }
 
@@ -371,7 +343,33 @@ button:disabled {
 
 .score-card.referee b {
   color: var(--orange);
-  font-size: 20px;
+  font-size: 18px;
+}
+
+.referee-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.referee-stats > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.referee-stats strong {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.referee-stats small {
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .host-controls {
@@ -446,7 +444,7 @@ button:disabled {
 .coast-frame {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 2.35;
+  aspect-ratio: 3.05;
   border: 1px solid rgba(13, 39, 36, 0.24);
   background: #bad9d4;
   box-shadow: var(--shadow);
@@ -503,7 +501,7 @@ button:disabled {
 .map-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(230px, 320px);
-  column-gap: 24px;
+  column-gap: 18px;
   align-items: end;
 }
 
@@ -515,6 +513,7 @@ button:disabled {
 .map-wrap {
   position: relative;
   overflow: hidden;
+  aspect-ratio: 2 / 1;
   border: 1px solid rgba(13, 39, 36, 0.2);
   background: #dfe7e1;
   box-shadow: var(--shadow);
@@ -604,8 +603,8 @@ button:disabled {
 }
 
 .selection-readout {
-  min-height: 54px;
-  padding: 9px 3px 7px;
+  min-height: 44px;
+  padding: 7px 3px 5px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -643,14 +642,8 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .topbar > .ghost-button,
-  .game-stats {
+  .topbar > .ghost-button {
     justify-self: stretch;
-  }
-
-  .game-stats {
-    justify-content: space-between;
-    gap: 10px;
   }
 
   .role-grid,
